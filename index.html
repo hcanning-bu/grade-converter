@@ -138,7 +138,8 @@
 
     .schema-table tr.row td:first-child {
       border-radius: 6px 0 0 6px;
-      padding-left: 0.55rem;
+      padding-left: 0.35rem;
+      width: 2rem;
     }
 
     .schema-table tr.row td:last-child {
@@ -147,6 +148,33 @@
     }
 
     .schema-table tbody tr { border-bottom: 0.45rem solid transparent; }
+
+    .schema-table tr.row.dragging {
+      opacity: 0.45;
+    }
+
+    .schema-table tr.row.drag-over {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+
+    .drag-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem;
+      height: 2.1rem;
+      color: var(--muted);
+      cursor: grab;
+      user-select: none;
+      font-size: 1.1rem;
+      letter-spacing: -0.12em;
+      line-height: 1;
+      border-radius: 4px;
+    }
+
+    .drag-handle:active { cursor: grabbing; }
+    .drag-handle:hover { color: var(--ink); background: #fff; }
 
     .range-cells {
       display: grid;
@@ -285,6 +313,7 @@
       <table class="schema-table">
         <thead>
           <tr>
+            <th aria-label="Reorder"></th>
             <th>Percentage range</th>
             <th>Letter</th>
             <th></th>
@@ -405,7 +434,10 @@
     var body = document.getElementById("schemaBody");
     body.innerHTML = schema.map(function (r, idx) {
       return (
-        '<tr class="row" data-idx="' + idx + '">' +
+        '<tr class="row" data-idx="' + idx + '" draggable="false">' +
+          '<td>' +
+            '<span class="drag-handle" draggable="true" title="Drag to reorder" aria-label="Drag to reorder" data-drag="1">⋮⋮</span>' +
+          '</td>' +
           '<td>' +
             '<div class="range-cells">' +
               '<input type="number" data-f="min" step="any" value="' + esc(r.min) + '" aria-label="Range min" />' +
@@ -500,6 +532,60 @@
     syncFromDom();
     schema.splice(idx, 1);
     if (!schema.length) schema = [{ min: 0, max: 100, letter: "A" }];
+    renderSchema();
+    setStatus("Unsaved changes — click Save schema to keep them.", "warn");
+  });
+
+  var dragFrom = null;
+
+  document.getElementById("schemaBody").addEventListener("dragstart", function (e) {
+    var handle = e.target.closest("[data-drag='1']");
+    if (!handle) {
+      e.preventDefault();
+      return;
+    }
+    var tr = handle.closest("tr");
+    dragFrom = Number(tr.dataset.idx);
+    tr.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(dragFrom));
+  });
+
+  document.getElementById("schemaBody").addEventListener("dragend", function (e) {
+    var tr = e.target.closest("tr");
+    if (tr) tr.classList.remove("dragging");
+    document.querySelectorAll("#schemaBody tr.drag-over").forEach(function (row) {
+      row.classList.remove("drag-over");
+    });
+    dragFrom = null;
+  });
+
+  document.getElementById("schemaBody").addEventListener("dragover", function (e) {
+    var tr = e.target.closest("tr.row");
+    if (!tr || dragFrom === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    document.querySelectorAll("#schemaBody tr.drag-over").forEach(function (row) {
+      if (row !== tr) row.classList.remove("drag-over");
+    });
+    tr.classList.add("drag-over");
+  });
+
+  document.getElementById("schemaBody").addEventListener("dragleave", function (e) {
+    var tr = e.target.closest("tr.row");
+    if (tr && !tr.contains(e.relatedTarget)) tr.classList.remove("drag-over");
+  });
+
+  document.getElementById("schemaBody").addEventListener("drop", function (e) {
+    var tr = e.target.closest("tr.row");
+    if (!tr || dragFrom === null) return;
+    e.preventDefault();
+    var to = Number(tr.dataset.idx);
+    tr.classList.remove("drag-over");
+    if (to === dragFrom) return;
+    syncFromDom();
+    var moved = schema.splice(dragFrom, 1)[0];
+    schema.splice(to, 0, moved);
     renderSchema();
     setStatus("Unsaved changes — click Save schema to keep them.", "warn");
   });
