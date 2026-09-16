@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HCANN | Grade Converter</title>
+  <style>
+    :root {
+      --primary: #c00000;
+      --primary-dark: #a00000;
+      --green: #28a745;
+      --bg: #f5f5f5;
+      --ink: #333;
+      --muted: #666;
+      --line: #e0e0e0;
+      --panel: #fff;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --font: Arial, Helvetica, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+
+    .wrap {
+      width: min(760px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 2.5rem;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.15rem, 2.5vw, 1.5rem);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    h2 {
+      margin: 0 0 0.85rem;
+      font-size: 1.05rem;
+      color: var(--primary);
+    }
+
+    .lead {
+      margin: 0.5rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .convert-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: stretch;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 520px) {
+      .convert-row { grid-template-columns: 1fr; }
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    input:focus {
+      outline: 2px solid rgba(192, 0, 0, 0.25);
+      border-color: var(--primary);
+    }
+
+    .result {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 7rem;
+      padding: 0.65rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .result.empty { color: var(--muted); font-size: 1rem; font-weight: 600; }
+
+    .hint {
+      margin: 0.55rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .schema-table th {
+      text-align: left;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 700;
+      padding: 0 0.4rem 0.45rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .schema-table td {
+      padding: 0.4rem 0.3rem;
+      vertical-align: middle;
+    }
+
+    .schema-table tr.row {
+      background: var(--bg);
+    }
+
+    .schema-table tr.row td:first-child {
+      border-radius: 6px 0 0 6px;
+      padding-left: 0.55rem;
+    }
+
+    .schema-table tr.row td:last-child {
+      border-radius: 0 6px 6px 0;
+      padding-right: 0.45rem;
+    }
+
+    .schema-table tbody tr { border-bottom: 0.45rem solid transparent; }
+
+    .range-cells {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .range-cells .sep { color: var(--muted); font-size: 0.85rem; }
+    .range-cells .unit { color: var(--muted); font-size: 0.85rem; }
+
+    .letter-input {
+      max-width: 5.5rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    button {
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 0.55rem 1rem;
+      border: 2px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .btn-outline:hover { background: var(--bg); }
+
+    .btn-ghost {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+      border-width: 2px;
+    }
+
+    .btn-ghost:hover { background: var(--bg); }
+
+    .btn-danger {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid var(--line);
+      width: 2.1rem;
+      height: 2.1rem;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-danger svg { width: 1rem; height: 1rem; display: block; }
+    .btn-danger:hover { border-color: var(--primary); background: #fff5f5; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.9rem;
+    }
+
+    .status {
+      margin: 0.65rem 0 0;
+      font-size: 0.85rem;
+      color: var(--green);
+      min-height: 1.2rem;
+    }
+
+    .status.warn { color: #a36a00; }
+    .status.error { color: var(--primary); }
+
+    .batch {
+      margin-top: 0.85rem;
+    }
+
+    .batch textarea {
+      width: 100%;
+      min-height: 5.5rem;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+      resize: vertical;
+    }
+
+    .batch textarea:focus {
+      outline: 2px solid rgba(192, 0, 0, 0.25);
+      border-color: var(--primary);
+    }
+
+    .batch-out {
+      margin-top: 0.65rem;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      min-height: 2.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="panel">
+      <h1>HCANN | Grade Converter</h1>
+      <p class="lead">Convert a percentage to a letter grade using an editable schema saved in this browser.</p>
+
+      <div class="convert-row">
+        <input id="pctInput" type="number" step="any" min="0" max="100" placeholder="Enter percentage (e.g. 87.5)" aria-label="Percentage" />
+        <div class="result empty" id="letterOut">Letter</div>
+      </div>
+      <p class="hint" id="matchHint">Enter a percentage to see the matching letter grade.</p>
+
+      <div class="batch">
+        <textarea id="batchIn" placeholder="Paste percentages (one per line or comma-separated) for bulk convert" aria-label="Bulk percentages"></textarea>
+        <div class="batch-out" id="batchOut">Bulk results appear here.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Grade Schema</h2>
+      <table class="schema-table">
+        <thead>
+          <tr>
+            <th>Percentage range</th>
+            <th>Letter</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="schemaBody"></tbody>
+      </table>
+      <div class="actions">
+        <button type="button" class="btn-primary" id="btnAdd">+ Add range</button>
+        <button type="button" class="btn-outline" id="btnSave">Save schema</button>
+        <button type="button" class="btn-ghost" id="btnReset">Reset to default</button>
+      </div>
+      <p class="status" id="schemaStatus"></p>
+    </section>
+  </div>
+
+<script>
+(function () {
+  var STORAGE_KEY = "hcann-grade-schema-v1";
+
+  var DEFAULT_SCHEMA = [
+    { min: 90, max: 100, letter: "A" },
+    { min: 80, max: 89.99, letter: "B" },
+    { min: 70, max: 79.99, letter: "C" },
+    { min: 60, max: 69.99, letter: "D" },
+    { min: 0, max: 59.99, letter: "F" }
+  ];
+
+  var schema = loadSchema();
+
+  function cloneDefault() {
+    return DEFAULT_SCHEMA.map(function (r) {
+      return { min: r.min, max: r.max, letter: r.letter };
+    });
+  }
+
+  function loadSchema() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return cloneDefault();
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed) || !parsed.length) return cloneDefault();
+      return parsed.map(normalizeRow).filter(Boolean);
+    } catch (e) {
+      return cloneDefault();
+    }
+  }
+
+  function normalizeRow(r) {
+    if (!r || typeof r !== "object") return null;
+    var min = Number(r.min);
+    var max = Number(r.max);
+    var letter = String(r.letter == null ? "" : r.letter).trim();
+    if (!Number.isFinite(min) || !Number.isFinite(max) || !letter) return null;
+    return { min: min, max: max, letter: letter };
+  }
+
+  function trashIcon() {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;");
+  }
+
+  function setStatus(msg, kind) {
+    var el = document.getElementById("schemaStatus");
+    el.textContent = msg || "";
+    el.className = "status" + (kind ? " " + kind : "");
+  }
+
+  function readSchemaFromDom() {
+    var rows = [];
+    document.querySelectorAll("#schemaBody tr").forEach(function (tr) {
+      var min = tr.querySelector('[data-f="min"]').value;
+      var max = tr.querySelector('[data-f="max"]').value;
+      var letter = tr.querySelector('[data-f="letter"]').value.trim();
+      rows.push({
+        min: min === "" ? NaN : Number(min),
+        max: max === "" ? NaN : Number(max),
+        letter: letter
+      });
+    });
+    return rows;
+  }
+
+  function validateSchema(rows) {
+    if (!rows.length) return "Add at least one range.";
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r.letter) return "Each range needs a letter grade.";
+      if (!Number.isFinite(r.min) || !Number.isFinite(r.max)) return "Min and max must be numbers.";
+      if (r.min > r.max) return "Min cannot be greater than max for " + r.letter + ".";
+    }
+    return "";
+  }
+
+  function letterFor(pct, rows) {
+    if (!Number.isFinite(pct)) return null;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (pct >= r.min && pct <= r.max) return r;
+    }
+    return null;
+  }
+
+  function activeSchema() {
+    var rows = readSchemaFromDom();
+    var err = validateSchema(rows);
+    if (err) return { rows: schema, error: err };
+    return { rows: rows, error: "" };
+  }
+
+  function renderSchema() {
+    var body = document.getElementById("schemaBody");
+    body.innerHTML = schema.map(function (r, idx) {
+      return (
+        '<tr class="row" data-idx="' + idx + '">' +
+          '<td>' +
+            '<div class="range-cells">' +
+              '<input type="number" data-f="min" step="any" value="' + esc(r.min) + '" aria-label="Range min" />' +
+              '<span class="sep">to</span>' +
+              '<input type="number" data-f="max" step="any" value="' + esc(r.max) + '" aria-label="Range max" />' +
+              '<span class="unit">%</span>' +
+            '</div>' +
+          '</td>' +
+          '<td><input class="letter-input" type="text" data-f="letter" value="' + esc(r.letter) + '" aria-label="Letter grade" /></td>' +
+          '<td><button type="button" class="btn-danger" data-act="remove" title="Remove range" aria-label="Remove range">' + trashIcon() + '</button></td>' +
+        '</tr>'
+      );
+    }).join("");
+    updateConvert();
+    updateBatch();
+  }
+
+  function updateConvert() {
+    var raw = document.getElementById("pctInput").value;
+    var out = document.getElementById("letterOut");
+    var hint = document.getElementById("matchHint");
+    if (raw === "") {
+      out.textContent = "Letter";
+      out.className = "result empty";
+      hint.textContent = "Enter a percentage to see the matching letter grade.";
+      return;
+    }
+    var pct = Number(raw);
+    var active = activeSchema();
+    if (active.error) {
+      out.textContent = "—";
+      out.className = "result empty";
+      hint.textContent = active.error;
+      return;
+    }
+    var match = letterFor(pct, active.rows);
+    if (!match) {
+      out.textContent = "—";
+      out.className = "result empty";
+      hint.textContent = pct + "% does not fall in any configured range.";
+      return;
+    }
+    out.textContent = match.letter;
+    out.className = "result";
+    hint.textContent = pct + "% → " + match.letter + " (" + match.min + "% to " + match.max + "%)";
+  }
+
+  function parseBulk(text) {
+    return text
+      .split(/[\n,;\s]+/)
+      .map(function (s) { return s.trim(); })
+      .filter(Boolean)
+      .map(function (s) { return Number(s.replace(/%/g, "")); });
+  }
+
+  function updateBatch() {
+    var text = document.getElementById("batchIn").value.trim();
+    var out = document.getElementById("batchOut");
+    if (!text) {
+      out.textContent = "Bulk results appear here.";
+      return;
+    }
+    var active = activeSchema();
+    if (active.error) {
+      out.textContent = active.error;
+      return;
+    }
+    var lines = parseBulk(text).map(function (pct) {
+      if (!Number.isFinite(pct)) return "invalid → —";
+      var match = letterFor(pct, active.rows);
+      return pct + "% → " + (match ? match.letter : "—");
+    });
+    out.textContent = lines.join("\n");
+  }
+
+  function syncFromDom() {
+    schema = readSchemaFromDom();
+  }
+
+  document.getElementById("schemaBody").addEventListener("input", function () {
+    syncFromDom();
+    setStatus("Unsaved changes — click Save schema to keep them.", "warn");
+    updateConvert();
+    updateBatch();
+  });
+
+  document.getElementById("schemaBody").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act='remove']");
+    if (!btn) return;
+    var tr = btn.closest("tr");
+    var idx = Number(tr.dataset.idx);
+    syncFromDom();
+    schema.splice(idx, 1);
+    if (!schema.length) schema = [{ min: 0, max: 100, letter: "A" }];
+    renderSchema();
+    setStatus("Unsaved changes — click Save schema to keep them.", "warn");
+  });
+
+  document.getElementById("btnAdd").addEventListener("click", function () {
+    syncFromDom();
+    schema.push({ min: "", max: "", letter: "" });
+    renderSchema();
+    setStatus("Unsaved changes — click Save schema to keep them.", "warn");
+  });
+
+  document.getElementById("btnSave").addEventListener("click", function () {
+    syncFromDom();
+    var err = validateSchema(schema);
+    if (err) {
+      setStatus(err, "error");
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(schema));
+    setStatus("Schema saved to this browser.");
+    updateConvert();
+    updateBatch();
+  });
+
+  document.getElementById("btnReset").addEventListener("click", function () {
+    if (!confirm("Reset schema to the default A–F scale?")) return;
+    schema = cloneDefault();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(schema));
+    renderSchema();
+    setStatus("Reset to default schema and saved.");
+  });
+
+  document.getElementById("pctInput").addEventListener("input", updateConvert);
+  document.getElementById("batchIn").addEventListener("input", updateBatch);
+
+  renderSchema();
+  if (localStorage.getItem(STORAGE_KEY)) {
+    setStatus("Loaded saved schema from this browser.");
+  }
+})();
+</script>
+</body>
+</html>
